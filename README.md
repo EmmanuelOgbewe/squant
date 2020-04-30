@@ -9,6 +9,10 @@ Make sure to have the following modules installed if not already:
 
 `pip3 install gzip`
 
+`pip3 install numba`
+
+`pip3 install scipy`
+
 #### *** Note *** 
 #### This implementation uses the full model implementation. #### 
 
