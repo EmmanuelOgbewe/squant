@@ -1,5 +1,5 @@
 import time
-
+# Time class from https://realpython.com/python-timer/
 class TimerError(Exception):
     """A custom exception used to report errors in use of Timer class"""
 

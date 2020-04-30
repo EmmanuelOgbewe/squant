@@ -14,7 +14,9 @@ import scipy.stats
 from scipy.special import ndtr
 from scipy.stats import spearmanr
 import benchmarks as bm
-
+# from memory_profiler import memory_usage
+# from memory_profiler import profile
+# from guppy import hpy
 
 #------Handle input------#
 def parseCommandLineArgs(args=[]):
@@ -28,11 +30,12 @@ def parseCommandLineArgs(args=[]):
 
     alignmentPath = args[3]
     output = args[5]
-    if '--eqc' in args:
-        useEquiv = True
-    else: 
-        useEquiv = False 
-        print("Using equivalence class model.")
+    readFile(alignmentPath, output)
+    # if '--eqc' in args:
+    #     useEquiv = True
+    # else: 
+    #     useEquiv = False 
+    #     print("Using equivalence class model.")
 
 
 #------Helpers------#
@@ -78,18 +81,13 @@ lookup = [fld.cdf(i) for i in range(1000)]
 def cdf(x):
     return 1.0 if x >= 1000 else lookup[x]
 
-    
-def readFile(input_file):
+def readFile(input_file, output_file):
     tran_dict = {}
     names_list = []
     count = 0 
     t_idx = 0 
 
     time = timer.Timer()
-    input_file = "data/alignments.cs423.gz"
-    # gz = gzip.open(input_file, 'rb')
-    # f = io.BufferedReader(gz)
-
     time.start()
     transcript = ''
     elens = {}
@@ -100,7 +98,7 @@ def readFile(input_file):
             line = f.readline()
             if t_idx == 0:
                 nt = int(line.strip())
-                print(nt)
+                
 
             if t_idx != 0 and t_idx <= nt: 
                 transcript = line.strip().split("\t")
@@ -113,7 +111,7 @@ def readFile(input_file):
                 tran_dict[transcript[0]] = (t_len,elen,t_idx)
                 names_list.append(transcript[0])
                 # print(transcript[0],tran_dict[transcript[0]])
-                print(t_idx)
+                # print(t_idx)
             t_idx += 1
             
             if t_idx == (nt + 1): 
@@ -150,7 +148,7 @@ def readFile(input_file):
                     P_2 = ns[elen]
                 else:
                     P_2 = 1 / elen
-                    ns[elen] = 1 / elen
+                    ns[elen] = P_2
                 # P_3s
                 if ori == "rc":
                     npos = tpos + 100
@@ -170,12 +168,13 @@ def readFile(input_file):
     print("Starting em")
     time.start()
     eta, iterations = run_em_fullmodel(nt, label_list, ind_list, prob_list)
-    print("Number of iterations: " + str(iterations))
+    # print("Number of iterations: " + str(iterations))
     time.stop() 
-    writeToOutput("test_out.tsv", names_list, tran_dict, ind_list, eta)
+    writeToOutput(output_file, names_list, tran_dict, ind_list, eta)
+    print("Writing to " + output_file + " has completed.")
 
 
-@jit(nopython=True)
+@jit(nopython=True, debug=True)
 def run_em_fullmodel(num_t,label_list, ind_list, p_list):
     eta = np.ones(num_t) / float(num_t) 
     eta_p  = np.zeros(num_t) 
@@ -218,13 +217,14 @@ def run_em_fullmodel(num_t,label_list, ind_list, p_list):
         if converged:
             break
         
-        eta = eta_p 
+        eta = eta_p
         eta_p = np.zeros(num_t)
-        print(it)
+        # print(it)
     #truncacte small didgits in eta 
     for tr in range(len(eta_p)):
         if eta_p[tr] < 1e-10:
             eta_p[tr] = 0.0
+    eta_p = eta_p * readCount
     return eta_p, it
 
 def writeToOutput(output_file, tn_names, tran_dict, ind_list, eta ):
@@ -268,19 +268,24 @@ def readResults(expected_file,real_file):
     tsv_file.close()
     return expected_count, real_count
 
-def run_benchmarks(expected, actual):
+# def run_benchmarks(expected, actual):
+#     h = hpy()
+#     print(h.heap())
+#     # print(memory_usage(run_em_fullmodel))
+#     corr = spearmanr(actual,expected)
+#     print("Spearmann Correlation : " + str(corr))
+#     print("Mean Error: " + str(bm.me(actual, expected)))
+#     print("Mean Absoulte Error: " + str(bm.mae(actual,expected)))
+#     print("Mean Squared Error: " + str(bm.mse(actual,expected)))
+#     print("Root Mean Squared Error: " + str(bm.rmse(actual,expected)))
 
-    corr = spearmanr(actual,expected)
-    print("Spearmann Correlation : " + str(corr))
-    print("Mean Error: " + str(bm.me(actual, expected)))
-    print("Mean Absoulte Error: " + str(bm.mae(actual,expected)))
-    print("Mean Squared Error: " + str(bm.mse(actual,expected)))
-    print("Root Mean Squared Error" + str(bm.rmse(actual,expected)))
 
-    
+
 if __name__ == "__main__":
-    # parseCommandLineArgs(sys.argv)
-    readFile("")
-    exp,actual = readResults("data/true_counts.tsv","test_out.tsv")
-    run_benchmarks(exp,actual)
-    # print(generate_eff_len())
+    parseCommandLineArgs(sys.argv)
+    # exp,actual = readResults("data/true_counts.tsv","test_out.tsv")
+    # run_benchmarks(exp,actual)
+
+  
+
+ 
