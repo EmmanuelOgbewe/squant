@@ -10,7 +10,7 @@ Make sure to have the following modules installed if not already:
 `pip3 install gzip`
 
 #### *** Note *** 
-#### This implementation does NOT use the equivalent class model #### 
+#### This implementation uses the full model implementation. #### 
 
 #### To run the squant command: ####
 
